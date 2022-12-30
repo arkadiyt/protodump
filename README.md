@@ -2,7 +2,7 @@
 
 Protodump is a utility to dump all Protobuf file descriptors from a given binary as *.proto files:
 
-<img>
+![Demo](https://raw.githubusercontent.com/arkadiyt/protodump/main/demo/demo.gif)
 
 ## Usage
 

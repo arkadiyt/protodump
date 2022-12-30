@@ -81,6 +81,8 @@ func (pd *ProtoDefinition) writeType(field protoreflect.FieldDescriptor) {
 	kind := field.Kind().String()
 	if kind == "message" {
 		pd.write(string(field.Message().Name()))
+	} else if kind == "enum" {
+		pd.write(string(field.Enum().Name()))
 	} else if kind == "map" {
 		pd.write("map<")
 		pd.writeType(field.MapKey())
@@ -118,7 +120,7 @@ func (pd *ProtoDefinition) writeField(field protoreflect.FieldDescriptor) {
 	pd.write(" ")
 	pd.write(string(field.Name()))
 	pd.write(" = ")
-	pd.write(strconv.Itoa(field.Index()))
+	pd.write(strconv.Itoa(int(field.Number())))
 	pd.write(";\n")
 }
 
@@ -196,7 +198,7 @@ func (pd *ProtoDefinition) writeImport(fileImport protoreflect.FileImport) {
 func (pd *ProtoDefinition) writeFileDescriptor() {
 	pd.write("syntax = \"")
 	pd.write(pd.descriptor.Syntax().String())
-	pd.write("\"\n\n")
+	pd.write("\";\n\n")
 
 	pd.write("package ")
 	pd.write(string(pd.descriptor.Package().Name()))

@@ -9,7 +9,7 @@ Protodump is a utility to dump all Protobuf file descriptors from a given binary
 ```
 git clone https://github.com/arkadiyt/protodump
 cd protodump
-go build -o protodump cmd/main.go
+go build -o protodump cmd/protodump/main.go
 ./protodump -file <file to extract from> -output <output directory>
 ```
 

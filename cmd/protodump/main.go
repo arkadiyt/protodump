@@ -8,8 +8,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/arkadiyt/protodump/pkg/proto"
-	"github.com/arkadiyt/protodump/pkg/scan"
+	"github.com/arkadiyt/protodump/pkg/protodump"
 )
 
 var debug bool
@@ -38,13 +37,13 @@ func main() {
 		return
 	}
 
-	results, err := scan.ScanFile(*file)
+	results, err := protodump.ScanFile(*file)
 	if err != nil {
 		log.Fatalf("Got error scanning: %v\n", err)
 	}
 
 	for _, result := range results {
-		definition, err := proto.NewFromBytes(result)
+		definition, err := protodump.NewFromBytes(result)
 		if err != nil {
 			Debug("Got error parsing definition: %v\n", err)
 		} else {

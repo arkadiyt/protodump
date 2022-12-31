@@ -31,7 +31,7 @@ func (pd *ProtoDefinition) dedent() {
 }
 
 func (pd *ProtoDefinition) writeIndented(s string) {
-	pd.builder.WriteString(strings.Repeat("    ", pd.indendation))
+	pd.builder.WriteString(strings.Repeat("  ", pd.indendation))
 	pd.write(s)
 }
 
@@ -51,14 +51,14 @@ func (pd *ProtoDefinition) writeMethod(method protoreflect.MethodDescriptor) {
 	// TODO need to handle method options
 	pd.writeIndented("rpc ")
 	pd.write(string(method.Name()))
-	pd.write("(")
+	pd.write(" (")
 	if method.IsStreamingClient() {
-		pd.write("streaming ")
+		pd.write("stream ")
 	}
 	pd.write(string(method.Input().Name()))
 	pd.write(") returns (")
 	if method.IsStreamingServer() {
-		pd.write("streaming ")
+		pd.write("stream ")
 	}
 	pd.write(string(method.Output().Name()))
 	pd.write(") {}\n")
@@ -79,10 +79,11 @@ func (pd *ProtoDefinition) writeService(service protoreflect.ServiceDescriptor) 
 
 func (pd *ProtoDefinition) writeType(field protoreflect.FieldDescriptor) {
 	kind := field.Kind().String()
+
 	if kind == "message" {
-		pd.write(string(field.Message().Name()))
+		pd.write(string(field.Message().FullName()))
 	} else if kind == "enum" {
-		pd.write(string(field.Enum().Name()))
+		pd.write(string(field.Enum().FullName()))
 	} else if kind == "map" {
 		pd.write("map<")
 		pd.writeType(field.MapKey())
@@ -125,7 +126,7 @@ func (pd *ProtoDefinition) writeField(field protoreflect.FieldDescriptor) {
 }
 
 func (pd *ProtoDefinition) writeEnum(enum protoreflect.EnumDescriptor) {
-	pd.write("enum ")
+	pd.writeIndented("enum ")
 	pd.write(string(enum.Name()))
 	pd.write(" {\n")
 	// TODO need to handle enum options (allow_alias)
@@ -143,7 +144,7 @@ func (pd *ProtoDefinition) writeEnum(enum protoreflect.EnumDescriptor) {
 
 func (pd *ProtoDefinition) writeMessage(message protoreflect.MessageDescriptor) {
 	// TODO need to handle message options
-	pd.write("message ")
+	pd.writeIndented("message ")
 	pd.write(string(message.Name()))
 	pd.write(" {\n")
 	pd.indent()
@@ -169,6 +170,14 @@ func (pd *ProtoDefinition) writeMessage(message protoreflect.MessageDescriptor) 
 			pd.write(fmt.Sprintf("%d", reservedRange[1]))
 		}
 		pd.write(";\n")
+	}
+
+	for i := 0; i < message.Messages().Len(); i++ {
+		pd.writeMessage(message.Messages().Get(i))
+	}
+
+	for i := 0; i < message.Enums().Len(); i++ {
+		pd.writeEnum(message.Enums().Get(i))
 	}
 
 	for i := 0; i < message.Fields().Len(); i++ {

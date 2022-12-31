@@ -13,8 +13,6 @@ go build -o protodump cmd/protodump/main.go
 ./protodump -file <file to extract from> -output <output directory>
 ```
 
-This was thrown together in a day and still has bugs :)
-
 ## Getting in touch
 
 Feel free to contact me on twitter: https://twitter.com/arkadiyt

@@ -2,6 +2,7 @@ package protodump
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -204,6 +205,60 @@ func (pd *ProtoDefinition) writeImport(fileImport protoreflect.FileImport) {
 	pd.write("\";\n")
 }
 
+func (pd *ProtoDefinition) writeStringFileOptions(name string, value string) {
+	pd.write("option ")
+	pd.write(name)
+	pd.write(" = \"")
+	pd.write(value)
+	pd.write("\";\n")
+}
+
+func (pd *ProtoDefinition) writeBoolFileOptions(name string, value bool) {
+	pd.writeStringFileOptions(name, strconv.FormatBool(value))
+}
+
+func (pd *ProtoDefinition) writeFileOptions() {
+	optionDefinitions := []struct {
+		OptionName string
+		FieldName  string
+	}{
+		{"java_package", "JavaPackage"},
+		{"java_outer_classname", "JavaOuterClassname"},
+		{"java_multiple_files", "JavaMultipleFiles"},
+		{"java_string_check_utf8", "JavaStringCheckUtf8"},
+		// TODO OptimizeMode: https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/descriptor.proto#L384
+		{"go_package", "GoPackage"},
+		// TODO generic services: https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/descriptor.proto#L403
+		// TODO deprecated: https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/descriptor.proto#L412
+		{"cc_enable_arenas", "CcEnableArenas"},
+		{"objc_class_prefix", "ObjcClassPrefix"},
+		{"csharp_namespace", "CsharpNamespace"},
+		{"swift_prefix", "SwiftPrefix"},
+		{"php_class_prefix", "PhpClassPrefix"},
+		{"php_namespace", "PhpNamespace"},
+		{"php_metadata_namespace", "PhpMetadataNamespace"},
+		{"ruby_package", "RubyPackage"},
+	}
+	options := reflect.ValueOf(pd.pb.GetOptions()).Elem()
+	printedOption := false
+	for _, option := range optionDefinitions {
+		elemPtr := options.FieldByName(option.FieldName)
+		if !elemPtr.IsNil() {
+			elem := elemPtr.Elem()
+			if elem.Kind() == reflect.String {
+				pd.writeStringFileOptions(option.OptionName, elem.String())
+			} else if elem.Kind() == reflect.Bool {
+				pd.writeBoolFileOptions(option.OptionName, elem.Bool())
+			}
+			printedOption = true
+		}
+	}
+
+	if printedOption {
+		pd.write("\n")
+	}
+}
+
 func (pd *ProtoDefinition) writeFileDescriptor() {
 	pd.write("syntax = \"")
 	pd.write(pd.descriptor.Syntax().String())
@@ -213,11 +268,7 @@ func (pd *ProtoDefinition) writeFileDescriptor() {
 	pd.write(string(pd.descriptor.Package().Name()))
 	pd.write(";\n\n")
 
-	// TODO need to handle FileOptions
-	filepb := protodesc.ToFileDescriptorProto(pd.descriptor)
-	options := filepb.Options
-	if options != nil {
-	}
+	pd.writeFileOptions()
 
 	for i := 0; i < pd.descriptor.Imports().Len(); i++ {
 		pd.writeImport(pd.descriptor.Imports().Get(i))

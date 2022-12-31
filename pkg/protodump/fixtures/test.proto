@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package helloworld;
+
+option go_package = "./;helloworld";
+
+service Greeter {
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc StreamMethodServer (StreamRequest) returns (stream StreamReply) {}
+}
+
+message HelloRequest {
+  message Test {
+    string blah = 1;
+  }
+
+  enum NestedEnum {
+    BLAH = 0;
+  }
+
+  string name = 1;
+  helloworld.HelloRequest.Test blah = 2;
+  helloworld.HelloRequest.NestedEnum blahblah = 3;
+  helloworld.HelloReply blaha = 4;
+}
+
+message HelloReply {
+  helloworld.HelloRequest.Test blah = 2;
+  helloworld.HelloRequest.NestedEnum blahblah = 3;
+  string message = 1;
+}
+
+message StreamRequest {
+  string message = 1;
+}
+
+message StreamReply {
+  string message = 1;
+}
+

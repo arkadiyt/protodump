@@ -5,8 +5,8 @@ package hello.world;
 option go_package = "./;helloworld";
 
 service Greeter {
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
-  rpc StreamMethodServer (StreamRequest) returns (stream StreamReply) {}
+  rpc SayHello (.hello.world.HelloRequest) returns (.hello.world.HelloReply) {}
+  rpc StreamMethodServer (.hello.world.StreamRequest) returns (stream .hello.world.StreamReply) {}
 }
 
 message Reserved {

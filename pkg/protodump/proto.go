@@ -55,12 +55,14 @@ func (pd *ProtoDefinition) writeMethod(method protoreflect.MethodDescriptor) {
 	if method.IsStreamingClient() {
 		pd.write("stream ")
 	}
-	pd.write(string(method.Input().Name()))
+	pd.write(".")
+	pd.write(string(method.Input().FullName()))
 	pd.write(") returns (")
 	if method.IsStreamingServer() {
 		pd.write("stream ")
 	}
-	pd.write(string(method.Output().Name()))
+	pd.write(".")
+	pd.write(string(method.Output().FullName()))
 	pd.write(") {}\n")
 }
 

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package helloworld;
+package hello.world;
 
 option go_package = "./;helloworld";
 
@@ -30,14 +30,14 @@ message HelloRequest {
   }
 
   string name = 1;
-  helloworld.HelloRequest.Test blah = 2;
-  helloworld.HelloRequest.NestedEnum blahblah = 3;
-  helloworld.HelloReply blaha = 4;
+  hello.world.HelloRequest.Test blah = 2;
+  hello.world.HelloRequest.NestedEnum blahblah = 3;
+  hello.world.HelloReply blaha = 4;
 }
 
 message HelloReply {
-  helloworld.HelloRequest.Test blah = 2;
-  helloworld.HelloRequest.NestedEnum blahblah = 3;
+  hello.world.HelloRequest.Test blah = 2;
+  hello.world.HelloRequest.NestedEnum blahblah = 3;
   string message = 1;
 }
 

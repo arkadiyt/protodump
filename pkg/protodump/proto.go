@@ -17,12 +17,10 @@ import (
 type ProtoDefinition struct {
 	builder     strings.Builder
 	indendation int
-	pb          descriptorpb.FileDescriptorProto
+	pb          *descriptorpb.FileDescriptorProto
 	descriptor  protoreflect.FileDescriptor
 	filename    string
 }
-
-// TODO add proto2 support
 
 func (pd *ProtoDefinition) indent() {
 	pd.indendation += 1
@@ -118,6 +116,8 @@ func (pd *ProtoDefinition) writeField(field protoreflect.FieldDescriptor) {
 		pd.write("optional ")
 	} else if field.Cardinality().String() == "repeated" {
 		pd.write("repeated ")
+	} else if field.Cardinality().String() == "required" && pd.descriptor.Syntax().String() == "proto2" {
+		pd.write("required ")
 	}
 	pd.writeType(field)
 	pd.write(" ")
@@ -220,7 +220,11 @@ func (pd *ProtoDefinition) writeStringFileOptions(name string, value string) {
 }
 
 func (pd *ProtoDefinition) writeBoolFileOptions(name string, value bool) {
-	pd.writeStringFileOptions(name, strconv.FormatBool(value))
+	pd.write("option ")
+	pd.write(name)
+	pd.write(" = ")
+	pd.write(strconv.FormatBool(value))
+	pd.write(";\n")
 }
 
 func (pd *ProtoDefinition) writeFileOptions() {
@@ -276,9 +280,12 @@ func (pd *ProtoDefinition) writeFileDescriptor() {
 	pd.write(pd.descriptor.Syntax().String())
 	pd.write("\";\n\n")
 
-	pd.write("package ")
-	pd.write(string(pd.descriptor.Package().Name()))
-	pd.write(";\n\n")
+	packageName := pd.descriptor.FullName()
+	if packageName != "" {
+		pd.write("package ")
+		pd.write(string(packageName))
+		pd.write(";\n\n")
+	}
 
 	pd.writeFileOptions()
 
@@ -310,12 +317,12 @@ func NewFromBytes(payload []byte) (*ProtoDefinition, error) {
 		return nil, fmt.Errorf("Couldn't unmarshal proto: %w", err)
 	}
 
-	return NewFromDescriptor(pb)
+	return NewFromDescriptor(&pb)
 }
 
-func NewFromDescriptor(pb descriptorpb.FileDescriptorProto) (*ProtoDefinition, error) {
+func NewFromDescriptor(pb *descriptorpb.FileDescriptorProto) (*ProtoDefinition, error) {
 	fileOptions := protodesc.FileOptions{AllowUnresolvable: true}
-	descriptor, err := fileOptions.New(&pb, &protoregistry.Files{})
+	descriptor, err := fileOptions.New(pb, &protoregistry.Files{})
 
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't create FileDescriptor: %w", err)

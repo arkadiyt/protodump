@@ -1,5 +1,5 @@
 build:
-	go build -o protodump cmd/protodump/main.go 
+	go build -o bin/protodump cmd/protodump/main.go
 
 fmt:
 	go fmt ./...

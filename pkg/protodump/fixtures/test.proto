@@ -9,6 +9,17 @@ service Greeter {
   rpc StreamMethodServer (StreamRequest) returns (stream StreamReply) {}
 }
 
+message Reserved {
+  reserved "foo";
+  reserved 1;
+  reserved 4 to 7;
+}
+
+message ReservedEnum {
+  reserved "FOO";
+  reserved 10 to max;
+}
+
 message HelloRequest {
   message Test {
     string blah = 1;

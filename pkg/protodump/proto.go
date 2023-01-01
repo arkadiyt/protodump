@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -152,23 +153,28 @@ func (pd *ProtoDefinition) writeMessage(message protoreflect.MessageDescriptor) 
 
 	for i := 0; i < message.ReservedNames().Len(); i++ {
 		name := message.ReservedNames().Get(i)
-		pd.writeIndented("reserved ")
+		pd.writeIndented("reserved \"")
 		pd.write(string(name))
-		pd.write(";\n")
+		pd.write("\";\n")
 	}
 
 	for i := 0; i < message.ReservedRanges().Len(); i++ {
-		reservedRange := message.ReservedRanges().Get(i)
 		pd.writeIndented("reserved ")
+		reservedRange := message.ReservedRanges().Get(i)
+		if reservedRange[0] > reservedRange[1] {
+			reservedRange[1], reservedRange[0] = reservedRange[0], reservedRange[1]
+		}
+		reservedRange[1] -= 1
 		if reservedRange[0] == reservedRange[1] {
-			pd.write(string(reservedRange[0]))
+			pd.write(fmt.Sprintf("%d", reservedRange[0]))
 		} else {
-			if reservedRange[0] > reservedRange[1] {
-				reservedRange[1], reservedRange[0] = reservedRange[0], reservedRange[1]
-			}
 			pd.write(fmt.Sprintf("%d", reservedRange[0]))
 			pd.write(" to ")
-			pd.write(fmt.Sprintf("%d", reservedRange[1]))
+			if reservedRange[1] == protowire.MaxValidNumber {
+				pd.write("max")
+			} else {
+				pd.write(fmt.Sprintf("%d", reservedRange[1]))
+			}
 		}
 		pd.write(";\n")
 	}

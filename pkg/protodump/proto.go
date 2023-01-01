@@ -239,7 +239,12 @@ func (pd *ProtoDefinition) writeFileOptions() {
 		{"php_metadata_namespace", "PhpMetadataNamespace"},
 		{"ruby_package", "RubyPackage"},
 	}
-	options := reflect.ValueOf(pd.pb.GetOptions()).Elem()
+
+	optionsPtr := reflect.ValueOf(pd.pb.GetOptions())
+	if optionsPtr.IsNil() {
+		return
+	}
+	options := optionsPtr.Elem()
 	printedOption := false
 	for _, option := range optionDefinitions {
 		elemPtr := options.FieldByName(option.FieldName)

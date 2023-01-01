@@ -250,9 +250,10 @@ func (pd *ProtoDefinition) writeFileOptions() {
 		elemPtr := options.FieldByName(option.FieldName)
 		if !elemPtr.IsNil() {
 			elem := elemPtr.Elem()
-			if elem.Kind() == reflect.String {
+			kind := elem.Kind()
+			if kind == reflect.String {
 				pd.writeStringFileOptions(option.OptionName, elem.String())
-			} else if elem.Kind() == reflect.Bool {
+			} else if kind == reflect.Bool {
 				pd.writeBoolFileOptions(option.OptionName, elem.Bool())
 			}
 			printedOption = true

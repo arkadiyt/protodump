@@ -2,6 +2,7 @@ package protodump
 
 import (
 	"fmt"
+	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -44,7 +45,13 @@ func (pd *ProtoDefinition) String() string {
 }
 
 func (pd *ProtoDefinition) Filename() string {
-	return pd.filename
+	goPackage := pd.pb.GetOptions().GetGoPackage()
+	index := strings.Index(goPackage, ";")
+	if index == -1 {
+		return pd.descriptor.Path()
+	}
+
+	return path.Join(goPackage[:index], path.Base(pd.descriptor.Path()))
 }
 
 func (pd *ProtoDefinition) writeMethod(method protoreflect.MethodDescriptor) {
@@ -83,8 +90,10 @@ func (pd *ProtoDefinition) writeType(field protoreflect.FieldDescriptor) {
 	kind := field.Kind().String()
 
 	if kind == "message" {
+		pd.write(".")
 		pd.write(string(field.Message().FullName()))
 	} else if kind == "enum" {
+		pd.write(".")
 		pd.write(string(field.Enum().FullName()))
 	} else if kind == "map" {
 		pd.write("map<")
@@ -217,7 +226,7 @@ func (pd *ProtoDefinition) writeStringFileOptions(name string, value string) {
 	pd.write("option ")
 	pd.write(name)
 	pd.write(" = \"")
-	pd.write(value)
+	pd.write(strings.ReplaceAll(value, "\\", "\\\\"))
 	pd.write("\";\n")
 }
 
@@ -333,7 +342,6 @@ func NewFromDescriptor(pb *descriptorpb.FileDescriptorProto) (*ProtoDefinition, 
 	pd := ProtoDefinition{
 		pb:         pb,
 		descriptor: descriptor,
-		filename:   descriptor.Path(),
 	}
 
 	pd.writeFileDescriptor()

@@ -13,13 +13,24 @@ const magicByte = 0xa
 
 func consumeBytes(data []byte, position int) int {
 	start := position
+	consumedFieldOne := false
 	for {
-		_, _, len := protowire.ConsumeField(data[position:])
+		number, _, len := protowire.ConsumeField(data[position:])
 		if len < 0 {
 			_ = protowire.ParseError(len)
 			return position - start
 
 		}
+
+		// Only consume Field 1 once (to handle the case where protobuf definitions are adjacent
+		// in program memory)
+		if number == 1 {
+			if consumedFieldOne {
+				return position - start
+			}
+			consumedFieldOne = true
+		}
+
 		position += len
 	}
 }

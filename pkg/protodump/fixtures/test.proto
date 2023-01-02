@@ -3,6 +3,7 @@ syntax = "proto3";
 package hello.world;
 
 option go_package = "./;helloworld";
+option php_namespace = "Google\\Cloud\\Iam\\V1";
 
 service Greeter {
   rpc SayHello (.hello.world.HelloRequest) returns (.hello.world.HelloReply) {}
@@ -30,14 +31,14 @@ message HelloRequest {
   }
 
   string name = 1;
-  hello.world.HelloRequest.Test blah = 2;
-  hello.world.HelloRequest.NestedEnum blahblah = 3;
-  hello.world.HelloReply blaha = 4;
+  .hello.world.HelloRequest.Test blah = 2;
+  .hello.world.HelloRequest.NestedEnum blahblah = 3;
+  .hello.world.HelloReply blaha = 4;
 }
 
 message HelloReply {
-  hello.world.HelloRequest.Test blah = 2;
-  hello.world.HelloRequest.NestedEnum blahblah = 3;
+  .hello.world.HelloRequest.Test blah = 2;
+  .hello.world.HelloRequest.NestedEnum blahblah = 3;
   string message = 1;
 }
 

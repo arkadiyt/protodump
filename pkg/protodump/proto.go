@@ -135,6 +135,19 @@ func (pd *ProtoDefinition) writeField(field protoreflect.FieldDescriptor) {
 	pd.write(string(field.Name()))
 	pd.write(" = ")
 	pd.write(strconv.Itoa(int(field.Number())))
+	if field.HasDefault() {
+		pd.write(" [default = ")
+		kind := field.Kind().String()
+		if kind == "string" {
+			pd.write(fmt.Sprintf("\"%s\"", field.Default().String()))
+		} else if kind == "enum" {
+			pd.write(string(field.Enum().Values().ByNumber(field.Default().Enum()).Name()))
+		} else {
+			pd.write(field.Default().String())
+		}
+
+		pd.write("]")
+	}
 	pd.write(";\n")
 }
 

@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,8 +13,6 @@ import (
 )
 
 const FIXTURES = "fixtures"
-
-var regex = regexp.MustCompile("(?m)var .* = \\[\\]byte{([^}]*)}")
 
 func convertProtoToFileDescriptor(filePath string) (*descriptorpb.FileDescriptorProto, error) {
 	dir, err := os.MkdirTemp("", "")

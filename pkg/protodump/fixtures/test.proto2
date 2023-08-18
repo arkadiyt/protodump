@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package hello.world;
+
+option go_package = "./;helloworld";
+
+message SearchRequest {
+  optional string query = 1 [default = "hello"];
+  optional int32 page_number = 2;
+  optional int32 result_per_page = 3 [default = 10];
+  optional .hello.world.Corpus corpus = 4 [default = CORPUS_UNIVERSAL];
+  optional bool field = 5 [default = true];
+}
+
+enum Corpus {
+  CORPUS_UNSPECIFIED = 0;
+  CORPUS_UNIVERSAL = 1;
+}
+

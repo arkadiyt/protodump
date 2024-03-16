@@ -13,4 +13,4 @@ go install github.com/arkadiyt/protodump/cmd/protodump@latest
 
 ## Getting in touch
 
-Feel free to contact me on twitter: https://twitter.com/arkadiyt
+Feel free to contact me on Signal: @arkadiyt.01

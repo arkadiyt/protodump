@@ -22,8 +22,10 @@ func convertProtoToFileDescriptor(filePath string) (*descriptorpb.FileDescriptor
 	defer os.RemoveAll(dir)
 
 	filename := "proto.bin"
-	err = exec.Command("protoc", fmt.Sprintf("--go_out=%s", dir), fmt.Sprintf("--descriptor_set_out=%s", path.Join(dir, filename)), filePath).Run()
+	cmd := exec.Command("protoc", fmt.Sprintf("--go_out=%s", dir), fmt.Sprintf("--descriptor_set_out=%s", path.Join(dir, filename)), filePath)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Print(string(output))
 		return nil, err
 	}
 

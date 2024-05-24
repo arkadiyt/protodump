@@ -141,7 +141,7 @@ func (pd *ProtoDefinition) writeField(field protoreflect.FieldDescriptor) {
 		if kind == "string" {
 			pd.write(fmt.Sprintf("\"%s\"", field.Default().String()))
 		} else if kind == "enum" {
-			pd.write(string(field.Enum().Values().ByNumber(field.Default().Enum()).Name()))
+			pd.write(string(field.DefaultEnumValue().Name()))
 		} else {
 			pd.write(field.Default().String())
 		}

@@ -69,6 +69,10 @@ func Scan(data []byte) [][]byte {
 		}
 
 		length := consumeBytes(data, start)
+		if start == 0 && length == 0 {
+			data = data[index+1:]
+			continue
+		}
 		results = append(results, data[start:start+length])
 		data = data[start+length:]
 	}

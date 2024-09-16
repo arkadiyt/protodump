@@ -108,16 +108,20 @@ func (pd *ProtoDefinition) writeType(field protoreflect.FieldDescriptor) {
 
 func (pd *ProtoDefinition) writeOneof(oneof protoreflect.OneofDescriptor) {
 	// TODO need to handle oneof options
-	pd.writeIndented("")
-	pd.write("oneof ")
-	pd.write(string(oneof.Name()))
-	pd.write(" {\n")
-	pd.indent()
-	for i := 0; i < oneof.Fields().Len(); i++ {
-		pd.writeField(oneof.Fields().Get(i))
+	if oneof.IsSynthetic() {
+		pd.writeField(oneof.Fields().Get(0))
+	} else {
+		pd.writeIndented("")
+		pd.write("oneof ")
+		pd.write(string(oneof.Name()))
+		pd.write(" {\n")
+		pd.indent()
+		for i := 0; i < oneof.Fields().Len(); i++ {
+			pd.writeField(oneof.Fields().Get(i))
+		}
+		pd.dedent()
+		pd.writeIndented("}\n")
 	}
-	pd.dedent()
-	pd.writeIndented("}\n")
 }
 
 func (pd *ProtoDefinition) writeField(field protoreflect.FieldDescriptor) {

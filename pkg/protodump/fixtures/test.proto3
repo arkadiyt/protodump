@@ -34,6 +34,7 @@ message HelloRequest {
   .hello.world.HelloRequest.Test blah = 2;
   .hello.world.HelloRequest.NestedEnum blahblah = 3;
   .hello.world.HelloReply blaha = 4;
+  optional string version = 5;
 }
 
 message HelloReply {

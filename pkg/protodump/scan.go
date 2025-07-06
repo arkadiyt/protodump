@@ -11,22 +11,21 @@ import (
 const scan = ".proto"
 const magicByte = 0xa
 
-func consumeBytes(data []byte, position int) int {
+func consumeBytes(data []byte, position int) (int, error) {
 	start := position
 	consumedFieldOne := false
 	for {
 		number, _, len := protowire.ConsumeField(data[position:])
 		if len < 0 {
-			_ = protowire.ParseError(len)
-			return position - start
-
+			err := protowire.ParseError(len)
+			return position - start, fmt.Errorf("couldn't consume proto bytes: %w", err)
 		}
 
 		// Only consume Field 1 once (to handle the case where protobuf definitions are adjacent
 		// in program memory)
 		if number == 1 {
 			if consumedFieldOne {
-				return position - start
+				return position - start, nil
 			}
 			consumedFieldOne = true
 		}
@@ -38,7 +37,7 @@ func consumeBytes(data []byte, position int) int {
 func ScanFile(path string) ([][]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("Couldn't open file: %w", err)
+		return nil, fmt.Errorf("couldn't open file: %w", err)
 	}
 	return Scan(data), nil
 }
@@ -68,7 +67,16 @@ func Scan(data []byte) [][]byte {
 			start -= 1
 		}
 
-		length := consumeBytes(data, start)
+		length, err := consumeBytes(data, start)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			if len(data) > index {
+				data = data[index+1:]
+				continue
+			} else {
+				break
+			}
+		}
 		results = append(results, data[start:start+length])
 		data = data[start+length:]
 	}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
 	"google.golang.org/protobuf/encoding/protowire"
 )
@@ -15,10 +16,20 @@ func consumeBytes(data []byte, position int) (int, error) {
 	start := position
 	consumedFieldOne := false
 	for {
-		number, _, len := protowire.ConsumeField(data[position:])
-		if len < 0 {
-			err := protowire.ParseError(len)
+		number, _, length := protowire.ConsumeField(data[position:])
+		if length < 0 {
+			err := protowire.ParseError(length)
+			// Treat "invalid field number" as end of data, not an error
+			if strings.Contains(err.Error(), "invalid field number") {
+				return position - start, nil
+			}
+			// Return other parse errors as actual errors
 			return position - start, fmt.Errorf("couldn't consume proto bytes: %w", err)
+		}
+
+		// Prevent infinite loop - if we can't consume any bytes, we're done
+		if length == 0 {
+			return position - start, nil
 		}
 
 		// Only consume Field 1 once (to handle the case where protobuf definitions are adjacent
@@ -30,7 +41,12 @@ func consumeBytes(data []byte, position int) (int, error) {
 			consumedFieldOne = true
 		}
 
-		position += len
+		position += length
+		
+		// Additional safety check - don't read beyond data bounds
+		if position-start >= len(data[start:]) {
+			return position - start, nil
+		}
 	}
 }
 

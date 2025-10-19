@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/arkadiyt/protodump/pkg/protodump"
@@ -18,6 +19,47 @@ func Debug(str string, a ...any) (int, error) {
 		return fmt.Printf(str, a...)
 	}
 	return 0, nil
+}
+
+func writeFile(outputDir string, filename string, content []byte) (string, error) {
+	outputDirAbs, err := filepath.Abs(outputDir)
+	if err != nil {
+		return "", fmt.Errorf("couldn't get absolute dir for %s: %v", outputDir, err)
+	}
+
+	fileDir, fileBase := filepath.Split(filename)
+
+	parts := strings.Split(path.Clean(fileDir), string(filepath.Separator))
+	var i int
+	for i = 0; i < len(parts); i++ {
+		_, err := os.Stat(filepath.Join(outputDirAbs, filepath.Join(parts[:i+1]...)))
+		if os.IsNotExist(err) {
+			break
+		}
+	}
+
+	eval := filepath.Join(outputDirAbs, filepath.Join(parts[:i]...))
+	base, err := filepath.EvalSymlinks(eval)
+	if err != nil {
+		return "", fmt.Errorf("failed to evalsymlinks on %s: %v", eval, err)
+	}
+
+	if !strings.HasPrefix(base, outputDirAbs) {
+		return "", fmt.Errorf("invalid filepath: %s", base)
+	}
+
+	rest := filepath.Join(parts[i:]...)
+	err = os.MkdirAll(filepath.Join(base, rest), 0700)
+	if err != nil {
+		return "", fmt.Errorf("failed to mkdirall on %s: %v", rest, err)
+	}
+
+	final := filepath.Join(base, rest, fileBase)
+	err = os.WriteFile(final, content, 0700)
+	if err != nil {
+		return "", fmt.Errorf("failed to write file %s: %v", final, err)
+	}
+	return final, nil
 }
 
 func main() {
@@ -42,18 +84,25 @@ func main() {
 		log.Fatalf("Got error scanning: %v\n", err)
 	}
 
+	err = os.MkdirAll(*output, 0700)
+	if err != nil {
+		log.Fatalf("Failed to create output folder %s: %v\n", *output, err)
+	}
+
 	for _, result := range results {
 		definition, err := protodump.NewFromBytes(result)
 		if err != nil {
 			Debug("Got error parsing definition: %v\n", err)
 		} else {
+
 			filename := definition.Filename()
 			if strings.HasSuffix(filename, ".proto") {
-				dir := path.Join(*output, path.Dir(filename))
-				final := path.Join(dir, path.Base(filename))
-				os.MkdirAll(dir, 0700)
-				os.WriteFile(final, []byte(definition.String()), 0700)
-				fmt.Printf("Wrote %s\n", final)
+				final, err := writeFile(*output, filename, []byte(definition.String()))
+				if err != nil {
+					fmt.Printf("Failed to write %s: %v\n", final, err)
+				} else {
+					fmt.Printf("Wrote %s\n", final)
+				}
 			} else {
 				// Need to investigate further
 			}

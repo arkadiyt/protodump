@@ -55,10 +55,17 @@ func writeFile(outputDir string, filename string, content []byte) (string, error
 	}
 
 	final := filepath.Join(base, rest, fileBase)
-	err = os.WriteFile(final, content, 0700)
+
+	file, err := os.OpenFile(final, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return "", fmt.Errorf("failed to open file %s: %v", final, err)
+	}
+	defer file.Close()
+	_, err = file.Write(content)
 	if err != nil {
 		return "", fmt.Errorf("failed to write file %s: %v", final, err)
 	}
+
 	return final, nil
 }
 

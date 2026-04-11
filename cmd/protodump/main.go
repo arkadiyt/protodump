@@ -44,7 +44,7 @@ func writeFile(outputDir string, filename string, content []byte) (string, error
 		return "", fmt.Errorf("failed to evalsymlinks on %s: %v", eval, err)
 	}
 
-	if !strings.HasPrefix(base, outputDirAbs) {
+	if base != outputDirAbs && !strings.HasPrefix(base, outputDirAbs+string(filepath.Separator)) {
 		return "", fmt.Errorf("invalid filepath: %s", base)
 	}
 

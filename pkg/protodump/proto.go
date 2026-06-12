@@ -40,6 +40,35 @@ func (pd *ProtoDefinition) write(s string) {
 	pd.builder.WriteString(s)
 }
 
+func escapeProtoString(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; {
+		case c == '\\':
+			b.WriteString(`\\`)
+		case c == '"':
+			b.WriteString(`\"`)
+		case c == '\n':
+			b.WriteString(`\n`)
+		case c == '\r':
+			b.WriteString(`\r`)
+		case c == '\t':
+			b.WriteString(`\t`)
+		case c < 0x20 || c >= 0x7f:
+			fmt.Fprintf(&b, `\%03o`, c)
+		default:
+			b.WriteByte(c)
+		}
+	}
+	return b.String()
+}
+
+func (pd *ProtoDefinition) writeQuoted(s string) {
+	pd.write("\"")
+	pd.write(escapeProtoString(s))
+	pd.write("\"")
+}
+
 func (pd *ProtoDefinition) String() string {
 	return pd.builder.String()
 }
@@ -143,7 +172,9 @@ func (pd *ProtoDefinition) writeField(field protoreflect.FieldDescriptor) {
 		pd.write(" [default = ")
 		kind := field.Kind().String()
 		if kind == "string" {
-			pd.write(fmt.Sprintf("\"%s\"", field.Default().String()))
+			pd.writeQuoted(field.Default().String())
+		} else if kind == "bytes" {
+			pd.writeQuoted(string(field.Default().Bytes()))
 		} else if kind == "enum" {
 			pd.write(string(field.DefaultEnumValue().Name()))
 		} else {
@@ -181,9 +212,9 @@ func (pd *ProtoDefinition) writeMessage(message protoreflect.MessageDescriptor) 
 
 	for i := 0; i < message.ReservedNames().Len(); i++ {
 		name := message.ReservedNames().Get(i)
-		pd.writeIndented("reserved \"")
-		pd.write(string(name))
-		pd.write("\";\n")
+		pd.writeIndented("reserved ")
+		pd.writeQuoted(string(name))
+		pd.write(";\n")
 	}
 
 	for i := 0; i < message.ReservedRanges().Len(); i++ {
@@ -234,17 +265,16 @@ func (pd *ProtoDefinition) writeImport(fileImport protoreflect.FileImport) {
 	if fileImport.IsPublic {
 		pd.write("public ")
 	}
-	pd.write("\"")
-	pd.write(fileImport.Path())
-	pd.write("\";\n")
+	pd.writeQuoted(fileImport.Path())
+	pd.write(";\n")
 }
 
 func (pd *ProtoDefinition) writeStringFileOptions(name string, value string) {
 	pd.write("option ")
 	pd.write(name)
-	pd.write(" = \"")
-	pd.write(strings.ReplaceAll(value, "\\", "\\\\"))
-	pd.write("\";\n")
+	pd.write(" = ")
+	pd.writeQuoted(value)
+	pd.write(";\n")
 }
 
 func (pd *ProtoDefinition) writeBoolFileOptions(name string, value bool) {

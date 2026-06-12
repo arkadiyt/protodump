@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -44,19 +45,19 @@ func convertProtoToFileDescriptor(filePath string) (*descriptorpb.FileDescriptor
 
 func TestDefinitions(t *testing.T) {
 	files, err := os.ReadDir(FIXTURES)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, file := range files {
 		t.Run(file.Name(), func(t *testing.T) {
 			filePath := path.Join(FIXTURES, file.Name())
 			descriptor, err := convertProtoToFileDescriptor(filePath)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			expected, err := os.ReadFile(filePath)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			actual, err := NewFromDescriptor(descriptor)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			assert.Equal(t, string(expected), actual.String())
 		})

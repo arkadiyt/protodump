@@ -1,0 +1,12 @@
+edition = "2023";
+
+package demo;
+
+option go_package = "./;editions";
+
+message Sample {
+  int32 id = 1;
+  string name = 2;
+  repeated int32 values = 3;
+}
+

@@ -23,23 +23,6 @@ type ProtoDefinition struct {
 	filename    string
 }
 
-func (pd *ProtoDefinition) indent() {
-	pd.indendation += 1
-}
-
-func (pd *ProtoDefinition) dedent() {
-	pd.indendation -= 1
-}
-
-func (pd *ProtoDefinition) writeIndented(s string) {
-	pd.builder.WriteString(strings.Repeat("  ", pd.indendation))
-	pd.write(s)
-}
-
-func (pd *ProtoDefinition) write(s string) {
-	pd.builder.WriteString(s)
-}
-
 func escapeProtoString(s string) string {
 	var b strings.Builder
 	for i := 0; i < len(s); i++ {
@@ -61,6 +44,34 @@ func escapeProtoString(s string) string {
 		}
 	}
 	return b.String()
+}
+
+func editionString(d protoreflect.FileDescriptor) (string, error) {
+	edition := protodesc.ToFileDescriptorProto(d).GetEdition().String()
+	if strings.HasPrefix(edition, "EDITION_") {
+		rest := strings.TrimPrefix(edition, "EDITION_")
+		if _, err := strconv.Atoi(rest); err == nil {
+			return rest, nil
+		}
+	}
+	return "unknown", fmt.Errorf("not a source edition: %v", edition)
+}
+
+func (pd *ProtoDefinition) indent() {
+	pd.indendation += 1
+}
+
+func (pd *ProtoDefinition) dedent() {
+	pd.indendation -= 1
+}
+
+func (pd *ProtoDefinition) writeIndented(s string) {
+	pd.builder.WriteString(strings.Repeat("  ", pd.indendation))
+	pd.write(s)
+}
+
+func (pd *ProtoDefinition) write(s string) {
+	pd.builder.WriteString(s)
 }
 
 func (pd *ProtoDefinition) writeQuoted(s string) {
@@ -334,9 +345,16 @@ func (pd *ProtoDefinition) writeFileOptions() {
 }
 
 func (pd *ProtoDefinition) writeFileDescriptor() {
-	pd.write("syntax = \"")
-	pd.write(pd.descriptor.Syntax().String())
-	pd.write("\";\n\n")
+	if pd.descriptor.Syntax() == protoreflect.Editions {
+		pd.write("edition = \"")
+		edition, _ := editionString(pd.descriptor)
+		pd.write(edition)
+		pd.write("\";\n\n")
+	} else {
+		pd.write("syntax = \"")
+		pd.write(pd.descriptor.Syntax().String())
+		pd.write("\";\n\n")
+	}
 
 	packageName := pd.descriptor.FullName()
 	if packageName != "" {

@@ -63,3 +63,30 @@ func TestDefinitions(t *testing.T) {
 		})
 	}
 }
+
+func TestFixUnsupportedEdition(t *testing.T) {
+	t.Run("supported edition is unchanged", func(t *testing.T) {
+		fd := &descriptorpb.FileDescriptorProto{
+			Edition: descriptorpb.Edition_EDITION_2023.Enum(),
+		}
+		FixUnsupportedEdition(fd)
+		assert.Equal(t, descriptorpb.Edition_EDITION_2023, fd.GetEdition())
+	})
+
+	t.Run("unsupported edition is replaced with EDITION_UNSTABLE", func(t *testing.T) {
+		unsupportedVal := descriptorpb.Edition(99995)
+		fd := &descriptorpb.FileDescriptorProto{
+			Edition: unsupportedVal.Enum(),
+		}
+		FixUnsupportedEdition(fd)
+		assert.Equal(t, descriptorpb.Edition_EDITION_UNSTABLE, fd.GetEdition())
+	})
+
+	t.Run("nil edition remains nil", func(t *testing.T) {
+		fd := &descriptorpb.FileDescriptorProto{
+			Syntax: proto.String("proto3"),
+		}
+		FixUnsupportedEdition(fd)
+		assert.Nil(t, fd.Edition)
+	})
+}

@@ -396,7 +396,16 @@ func NewFromBytes(payload []byte) (*ProtoDefinition, error) {
 	return NewFromDescriptor(&pb)
 }
 
+func FixUnsupportedEdition(fd *descriptorpb.FileDescriptorProto) {
+	if fd.Edition != nil {
+		if _, ok := descriptorpb.Edition_name[int32(*fd.Edition)]; !ok {
+			fd.Edition = descriptorpb.Edition_EDITION_UNSTABLE.Enum()
+		}
+	}
+}
+
 func NewFromDescriptor(pb *descriptorpb.FileDescriptorProto) (*ProtoDefinition, error) {
+	FixUnsupportedEdition(pb)
 	fileOptions := protodesc.FileOptions{AllowUnresolvable: true}
 	descriptor, err := fileOptions.New(pb, &protoregistry.Files{})
 

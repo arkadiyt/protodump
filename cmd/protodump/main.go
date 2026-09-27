@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/arkadiyt/protodump/pkg/protodump"
@@ -19,54 +17,6 @@ func Debug(str string, a ...any) (int, error) {
 		return fmt.Printf(str, a...)
 	}
 	return 0, nil
-}
-
-func writeFile(outputDir string, filename string, content []byte) (string, error) {
-	outputDirAbs, err := filepath.Abs(outputDir)
-	if err != nil {
-		return "", fmt.Errorf("couldn't get absolute dir for %s: %v", outputDir, err)
-	}
-
-	fileDir, fileBase := filepath.Split(filename)
-
-	parts := strings.Split(path.Clean(fileDir), string(filepath.Separator))
-	var i int
-	for i = 0; i < len(parts); i++ {
-		_, err := os.Stat(filepath.Join(outputDirAbs, filepath.Join(parts[:i+1]...)))
-		if os.IsNotExist(err) {
-			break
-		}
-	}
-
-	eval := filepath.Join(outputDirAbs, filepath.Join(parts[:i]...))
-	base, err := filepath.EvalSymlinks(eval)
-	if err != nil {
-		return "", fmt.Errorf("failed to evalsymlinks on %s: %v", eval, err)
-	}
-
-	if base != outputDirAbs && !strings.HasPrefix(base, outputDirAbs+string(filepath.Separator)) {
-		return "", fmt.Errorf("invalid filepath: %s", base)
-	}
-
-	rest := filepath.Join(parts[i:]...)
-	err = os.MkdirAll(filepath.Join(base, rest), 0700)
-	if err != nil {
-		return "", fmt.Errorf("failed to mkdirall on %s: %v", rest, err)
-	}
-
-	final := filepath.Join(base, rest, fileBase)
-
-	file, err := os.OpenFile(final, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
-	if err != nil {
-		return "", fmt.Errorf("failed to open file %s: %v", final, err)
-	}
-	defer file.Close()
-	_, err = file.Write(content)
-	if err != nil {
-		return "", fmt.Errorf("failed to write file %s: %v", final, err)
-	}
-
-	return final, nil
 }
 
 func main() {
@@ -91,10 +41,11 @@ func main() {
 		log.Fatalf("Got error scanning: %v\n", err)
 	}
 
-	err = os.MkdirAll(*output, 0700)
+	outputRoot, err := openOutputDir(*output)
 	if err != nil {
-		log.Fatalf("Failed to create output folder %s: %v\n", *output, err)
+		log.Fatalf("Failed to open output folder %q: %v\n", *output, err)
 	}
+	defer outputRoot.Close()
 
 	for _, result := range results {
 		definition, err := protodump.NewFromBytes(result)
@@ -104,11 +55,11 @@ func main() {
 
 			filename := definition.Filename()
 			if strings.HasSuffix(filename, ".proto") {
-				final, err := writeFile(*output, filename, []byte(definition.String()))
+				final, err := writeFile(outputRoot, filename, []byte(definition.String()))
 				if err != nil {
-					fmt.Printf("Failed to write %s: %v\n", final, err)
+					fmt.Printf("Failed to write %q: %v\n", filename, err)
 				} else {
-					fmt.Printf("Wrote %s\n", final)
+					fmt.Printf("Wrote %q\n", final)
 				}
 			} else {
 				// Need to investigate further

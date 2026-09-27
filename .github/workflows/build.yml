@@ -1,24 +1,48 @@
 on:
   - push
-  - pull_request_target
+  - pull_request
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: go.mod
       - name: Install Protoc
         run: |
-          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v28.1/protoc-28.1-linux-x86_64.zip
-          unzip protoc-28.1-linux-x86_64.zip -d $HOME/.local
-          export PATH="$PATH:$HOME/.local/bin"
-          protoc --version
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          case "$RUNNER_OS" in
+            Linux) archive=linux-x86_64 ;;
+            macOS)
+              if [[ "$(uname -m)" == "arm64" ]]; then
+                archive=osx-aarch_64
+              else
+                archive=osx-x86_64
+              fi
+              ;;
+            Windows) archive=win64 ;;
+          esac
+          curl -fLsS -o "$RUNNER_TEMP/protoc.zip" "https://github.com/protocolbuffers/protobuf/releases/download/v28.1/protoc-28.1-$archive.zip"
+          python -m zipfile -e "$RUNNER_TEMP/protoc.zip" "$RUNNER_TEMP/protoc"
+          chmod +x "$RUNNER_TEMP/protoc/bin/"*
+          echo "$RUNNER_TEMP/protoc/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/protoc/bin/protoc" --version
+          go install google.golang.org/protobuf/cmd/protoc-gen-go
       - name: Test
-        run: make test
+        run: go test -race ./...
+      - name: Vet
+        run: go vet ./...
       - name: Build
-        run: make build
+        run: go build ./cmd/protodump

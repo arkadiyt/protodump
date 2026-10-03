@@ -396,7 +396,41 @@ func NewFromBytes(payload []byte) (*ProtoDefinition, error) {
 	return NewFromDescriptor(&pb)
 }
 
+func FixGoogleBinaryDescriptorProto(fd *descriptorpb.FileDescriptorProto) {
+	// Replace dependency if present
+	for i, dep := range fd.Dependency {
+		if dep == "net/proto2/proto/descriptor.proto" {
+			fd.Dependency[i] = "google/protobuf/descriptor.proto"
+		}
+	}
+
+	// Replace extendees
+	for _, ext := range fd.Extension {
+		switch ext.GetExtendee() {
+		case ".proto2.FileOptions":
+			ext.Extendee = proto.String(".google.protobuf.FileOptions")
+		case ".proto2.EnumOptions":
+			ext.Extendee = proto.String(".google.protobuf.EnumOptions")
+		case ".proto2.EnumValueOptions":
+			ext.Extendee = proto.String(".google.protobuf.EnumValueOptions")
+		case ".proto2.MessageOptions":
+			ext.Extendee = proto.String(".google.protobuf.MessageOptions")
+		case ".proto2.FieldOptions":
+			ext.Extendee = proto.String(".google.protobuf.FieldOptions")
+		case ".proto2.OneofOptions":
+			ext.Extendee = proto.String(".google.protobuf.OneofOptions")
+		case ".proto2.ExtensionRangeOptions":
+			ext.Extendee = proto.String(".google.protobuf.ExtensionRangeOptions")
+		case ".proto2.ServiceOptions":
+			ext.Extendee = proto.String(".google.protobuf.ServiceOptions")
+		case ".proto2.MethodOptions":
+			ext.Extendee = proto.String(".google.protobuf.MethodOptions")
+		}
+	}
+}
+
 func NewFromDescriptor(pb *descriptorpb.FileDescriptorProto) (*ProtoDefinition, error) {
+	FixGoogleBinaryDescriptorProto(pb)
 	fileOptions := protodesc.FileOptions{AllowUnresolvable: true}
 	descriptor, err := fileOptions.New(pb, &protoregistry.Files{})
 
